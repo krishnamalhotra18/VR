@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Fictional Physics VR Experiment</title>
+  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/cannon-es@0.20.0/dist/cannon-es.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-physics-system@1.4.0/dist/aframe-physics-system.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #physics-ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #0ff;
+      padding: 20px;
+      border-radius: 5px;
+      font-family: monospace;
+      z-index: 999;
+      max-width: 300px;
+    }
+
+    .physics-mode {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(0, 100, 100, 0.5);
+      cursor: pointer;
+      border: 2px solid #0ff;
+      border-radius: 3px;
+      transition: all 0.3s;
+    }
+
+    .physics-mode:hover {
+      background: rgba(0, 150, 150, 0.8);
+      transform: scale(1.05);
+    }
+
+    .physics-mode.active {
+      background: #0ff;
+      color: #000;
+      font-weight: bold;
+    }
+
+    #info {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #0f0;
+      padding: 15px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+  <a-scene physics="driver: cannon; gravity: 0 -9.8 0; restitution: 0.8">
+    <!-- Camera & controllers -->
+    <a-entity camera position="0 1.6 0" look-controls wasd-controls>
+      <a-cursor></a-cursor>
+    </a-entity>
+
+    <!-- Left controller -->
+    <a-entity id="leftController" oculus-touch-controls="hand: left" controller-physics></a-entity>
+
+    <!-- Right controller -->
+    <a-entity id="rightController" oculus-touch-controls="hand: right" controller-physics></a-entity>
+
+    <!-- Lighting -->
+    <a-light type="ambient" color="#fff" intensity="0.7"></a-light>
+    <a-light type="directional" position="5 10 7" intensity="1" shadow></a-light>
+
+    <!-- Sky -->
+    <a-sky id="sky" color="#001a33"></a-sky>
+
+    <!-- Ground -->
+    <a-plane id="ground" position="0 0 0" rotation="-90 0 0" width="50" height="50" color="#0a0a2e" shadow
+      static-body></a-plane>
+
+    <!-- Physics experiment objects -->
+
+    <!-- Normal Physics Group -->
+    <a-entity position="-8 2 -5">
+      <a-sphere id="normalSphere" position="0 0 0" radius="0.5" color="#00ff00" shadow dynamic-body
+        class="physics-object" data-physics-mode="normal"></a-sphere>
+      <a-text value="NORMAL" position="0 -1.2 0" scale="0.5 0.5 0.5" align="center" color="#00ff00"></a-text>
+    </a-entity>
+
+    <!-- Reverse Gravity Group -->
+    <a-entity position="0 2 -5">
+      <a-box id="antiGravBox" position="0 0 0" width="0.8" height="0.8" depth="0.8" color="#ff00ff" shadow dynamic-body
+        class="physics-object" data-physics-mode="anti-gravity"></a-box>
+      <a-text value="REVERSE GRAVITY" position="0 -1.2 0" scale="0.5 0.5 0.5" align="center" color="#ff00ff"></a-text>
+    </a-entity>
+
+    <!-- Frozen Time Group -->
+    <a-entity position="8 2 -5">
+      <a-cylinder id="frozenCylinder" position="0 0 0" radius="0.5" height="1" color="#00ffff" shadow dynamic-body
+        class="physics-object" data-physics-mode="frozen"></a-cylinder>
+      <a-text value="FROZEN TIME" position="0 -1.5 0" scale="0.5 0.5 0.5" align="center" color="#00ffff"></a-text>
+    </a-entity>
+
+    <!-- Phase Through Group -->
+    <a-entity position="-8 2 5">
+      <a-cone id="phaseCone" position="0 0 0" radius-bottom="0.6" height="1" color="#ffff00" shadow dynamic-body
+        class="physics-object" data-physics-mode="phase"></a-cone>
+      <a-text value="PHASE THROUGH" position="0 -1.5 0" scale="0.5 0.5 0.5" align="center" color="#ffff00"></a-text>
+    </a-entity>
+
+    <!-- Particle/Debris objects for testing -->
+    <a-entity position="0 1 5" id="debris-container"></a-entity>
+
+    <!-- Info panel -->
+    <a-plane position="0 2 -8" width="6" height="3" color="#111" material="emissive: #001a33"></a-plane>
+    <a-text value="VR Physics Experiment
+      
+Click objects or use controllers to interact
+Change gravity and time modes with UI
+Use controllers to grab and throw objects" position="0 2 -7.9" width="5" align="center" color="#0ff"
+      font-size="32"></a-text>
+  </a-scene>
+
+  <!-- UI for physics modes -->
+  <div id="physics-ui">
+    <div style="text-align: center; margin-bottom: 15px; font-size: 14px;">
+      🎮 PHYSICS MODES 🎮
+    </div>
+    <div class="physics-mode active" data-mode="normal">
+      ► Normal Gravity
+    </div>
+    <div class="physics-mode" data-mode="anti-gravity">
+      ↑ Reverse Gravity
+    </div>
+    <div class="physics-mode" data-mode="frozen">
+      ⏸ Frozen Time
+    </div>
+    <div class="physics-mode" data-mode="phase">
+      ⊚ Phase Through
+    </div>
+    <div class="physics-mode" data-mode="chaos">
+      ✦ Chaos Mode
+    </div>
+  </div>
+
+  <div id="info">
+    <div>Active Mode: <span id="active-mode">Normal</span></div>
+    <div>Objects in scene: <span id="object-count">4</span></div>
+    <div>Spawn new object: Press SPACE</div>
+  </div>
+
+  <script>
+    class PhysicsExperiment {
+      constructor() {
+        this.currentMode = 'normal';
+        this.objects = [];
+        this.gravity = { x: 0, y: -9.8, z: 0 };
+        this.frozenObjects = new Set();
+        this.phaseObjects = new Set();
+        this.objectSpeed = 0;
+        this.init();
+      }
+
+      init() {
+        this.setupEventListeners();
+        this.updatePhysicsMode('normal');
+        document.querySelectorAll('[dynamic-body]').forEach(el => {
+          this.objects.push(el);
+        });
+      }
+
+      setupEventListeners() {
+        // UI mode selection
+        document.querySelectorAll('.physics-mode').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const mode = e.target.dataset.mode;
+            this.updatePhysicsMode(mode);
+          });
+        });
+
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+          if (e.key === ' ') this.spawnObject();
+          if (e.key === 'r') this.resetScene();
+          if (e.key === 'g') this.toggleGravity();
+        });
+
+        // Click to interact with objects
+        document.querySelectorAll('.physics-object').forEach(obj => {
+          obj.addEventListener('click', () => {
+            this.impactObject(obj);
+          });
+        });
+      }
+
+      updatePhysicsMode(mode) {
+        this.currentMode = mode;
+
+        // Update UI
+        document.querySelectorAll('.physics-mode').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+        document.getElementById('active-mode').textContent =
+          mode.charAt(0).toUpperCase() + mode.slice(1);
+
+        // Apply physics rules
+        this.applyPhysicsRules();
+      }
+
+      applyPhysicsRules() {
+        const scene = document.querySelector('a-scene');
+
+        switch (this.currentMode) {
+          case 'normal':
+            scene.setAttribute('physics', 'gravity: 0 -9.8 0');
+            this.frozenObjects.clear();
+            this.phaseObjects.clear();
+            this.enableCollisions();
+            break;
+
+          case 'anti-gravity':
+            scene.setAttribute('physics', 'gravity: 0 9.8 0');
+            this.frozenObjects.clear();
+            this.phaseObjects.clear();
+            this.enableCollisions();
+            break;
+
+          case 'frozen':
+            scene.setAttribute('physics', 'gravity: 0 0 0');
+            this.freezeAllObjects();
+            this.enableCollisions();
+            break;
+
+          case 'phase':
+            scene.setAttribute('physics', 'gravity: 0 -9.8 0');
+            this.phaseAllObjects();
+            this.disableCollisions();
+            break;
+
+          case 'chaos':
+            this.createChaosMode();
+            break;
+        }
+      }
+
+      freezeAllObjects() {
+        document.querySelectorAll('[dynamic-body]').forEach(obj => {
+          obj.body?.setVelocity(0, 0, 0);
+          obj.body?.setAngularVelocity(0, 0, 0);
+          this.frozenObjects.add(obj);
+        });
+      }
+
+      phaseAllObjects() {
+        document.querySelectorAll('[dynamic-body]').forEach(obj => {
+          obj.setAttribute('material', 'transparent: true; opacity: 0.7');
+          this.phaseObjects.add(obj);
+        });
+      }
+
+      enableCollisions() {
+        document.querySelectorAll('[dynamic-body]').forEach(obj => {
+          obj.body?.collisionResponse = 1;
+          obj.setAttribute('material', 'transparent: false');
+        });
+      }
+
+      disableCollisions() {
+        document.querySelectorAll('[dynamic-body]').forEach(obj => {
+          obj.body?.collisionResponse = 0;
+        });
+      }
+
+      createChaosMode() {
+        const scene = document.querySelector('a-scene');
+        scene.setAttribute('physics', 'gravity: 0 -15 0');
+
+        document.querySelectorAll('[dynamic-body]').forEach(obj => {
+          if (obj.body) {
+            const randomGrav = {
+              x: (Math.random() - 0.5) * 10,
+              y: (Math.random() - 0.5) * 10,
+              z: (Math.random() - 0.5) * 10
+            };
+            obj.body.setVelocity(randomGrav.x, randomGrav.y, randomGrav.z);
+          }
+        });
+      }
+
+      spawnObject() {
+        const types = ['sphere', 'box', 'cylinder', 'cone'];
+        const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const container = document.getElementById('debris-container');
+        const entity = document.createElement('a-entity');
+        entity.setAttribute('position', `${Math.random() * 10 - 5} 5 ${Math.random() * 10 - 5}`);
+
+        let primitive = type;
+        entity.innerHTML = `<a-${primitive} 
+          radius="0.3" 
+          width="0.6" 
+          height="0.6" 
+          depth="0.6"
+          color="${color}"
+          dynamic-body
+          class="physics-object"
+          data-physics-mode="${this.currentMode}"
+        ></a-${primitive}>`;
+
+        container.appendChild(entity);
+
+        // Apply current mode to new object
+        if (this.currentMode === 'frozen') {
+          this.frozenObjects.add(entity.querySelector(`a-${type}`));
+        } else if (this.currentMode === 'phase') {
+          entity.querySelector(`a-${type}`).setAttribute('material', 'transparent: true; opacity: 0.7');
+        }
+
+        document.getElementById('object-count').textContent =
+          document.querySelectorAll('[dynamic-body]').length;
+      }
+
+      impactObject(obj) {
+        if (obj.body) {
+          const force = {
+            x: (Math.random() - 0.5) * 20,
+            y: Math.random() * 10 + 5,
+            z: (Math.random() - 0.5) * 20
+          };
+          obj.body?.applyImpulse(
+            new CANNON.Vec3(force.x, force.y, force.z),
+            obj.body.position
+          );
+        }
+      }
+
+      toggleGravity() {
+        this.gravity.y *= -1;
+        const scene = document.querySelector('a-scene');
+        scene.setAttribute('physics', `gravity: 0 ${this.gravity.y} 0`);
+      }
+
+      resetScene() {
+        location.reload();
+      }
+    }
+
+    // Initialize experiment when scene loads
+    const scene = document.querySelector('a-scene');
+    scene.addEventListener('loaded', () => {
+      window.experiment = new PhysicsExperiment();
+    });
+  </script>
+</body>
+
+</html>

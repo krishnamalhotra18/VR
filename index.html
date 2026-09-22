@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Reality Breaker: Impossible Physics Simulator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #030712;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #e0f2fe;
+    }
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+    #crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 10px;
+      height: 10px;
+      margin-top: -5px;
+      margin-left: -5px;
+      border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.7);
+      background-color: rgba(255, 255, 255, 0.3);
+      pointer-events: none;
+      z-index: 10;
+      transition: transform 0.1s ease;
+    }
+    #crosshair.active {
+      transform: scale(1.6);
+      border-color: #f43f5e;
+      background-color: rgba(244, 63, 94, 0.5);
+    }
+    #desktop-hud {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      z-index: 10;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      border-radius: 12px;
+      padding: 14px 20px;
+      color: #93c5fd;
+      font-size: 13px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      pointer-events: none;
+      line-height: 1.6;
+    }
+    #desktop-hud h4 {
+      color: #38bdf8;
+      font-size: 14px;
+      margin-bottom: 6px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .hud-key {
+      color: #38bdf8;
+      font-weight: bold;
+    }
+    #vr-button-container {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="crosshair"></div>
+
+  <div id="desktop-hud">
+    <h4>Reality Breaker - Desktop Controls</h4>
+    <div class="hud-row"><span><span class="hud-key">W A S D</span> Move Horizontally</span> <span><span class="hud-key">Space / Shift</span> Move Up / Down</span></div>
+    <div class="hud-row"><span><span class="hud-key">Click</span> Lock Camera</span> <span><span class="hud-key">Left Click</span> Grab / Push Buttons</span></div>
+    <div class="hud-row"><span><span class="hud-key">Right Click</span> Throw Object</span> <span><span class="hud-key">E / Q</span> Distance Near / Far</span></div>
+    <div class="hud-row"><span><span class="hud-key">VR Headset</span> Plug in / VR Mode</span> <span><span class="hud-key">Console</span> 3D Buttons: MOVE UP/DOWN</span></div>
+  </div>
+
+  <div id="vr-button-container"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
